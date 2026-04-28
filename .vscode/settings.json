@@ -1,0 +1,6 @@
+{
+  "biome.enabled": false,
+  "files.exclude": {
+    "apps": true
+  }
+}
