@@ -1,0 +1,6 @@
+-- Migration number: 0001 	 2026-04-28T08:13:23.047Z
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    refresh_token TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

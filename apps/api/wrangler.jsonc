@@ -13,6 +13,13 @@
 			"id": "f2c8cad43e784894993e7cee0e9187d9"
 		}
 	],
+	"d1_databases": [
+		{
+			"binding": "KADAI_BOX_DB",
+			"database_name": "KADAI_BOX_DB",
+			"database_id": "39ee8e3d-0c4b-4b18-b09c-ff80495941a5"
+		}
+	],
 	// "compatibility_flags": [
 	//   "nodejs_compat"
 	// ],
