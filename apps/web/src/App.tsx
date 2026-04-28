@@ -1,3 +1,3 @@
 export default function App() {
-  return <h1>Hello, kadai-box!</h1>
+  return <h1>Hello, React</h1>
 }
