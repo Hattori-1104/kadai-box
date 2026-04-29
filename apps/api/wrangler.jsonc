@@ -20,12 +20,11 @@
 			"database_id": "39ee8e3d-0c4b-4b18-b09c-ff80495941a5"
 		}
 	],
-	// "compatibility_flags": [
-	//   "nodejs_compat"
-	// ],
-	// "vars": {
-	//   "MY_VAR": "my-variable"
-	// },
+	"vars": {
+		"BOX_CLIENT_ID": "",
+		"BOX_CLIENT_SECRET": "",
+		"BOX_REDIRECT_URI": "",
+	},
 	// "kv_namespaces": [
 	//   {
 	//     "binding": "MY_KV_NAMESPACE",
