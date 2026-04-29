@@ -72,10 +72,8 @@ const addPageToDoc = (
     doc.addImage(ctx.canvas, "JPEG", layout.x, layout.y, layout.w, layout.h)
   })
 
-export const generatePdf = (items: ImageItem[]): Effect.Effect<void, PdfError> =>
+const buildDoc = (items: ImageItem[]): Effect.Effect<jsPDF, PdfError> =>
   Effect.gen(function* () {
-    if (items.length === 0) return
-
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
     const canvas = document.createElement("canvas")
     const maybeCtx = canvas.getContext("2d")
@@ -88,5 +86,11 @@ export const generatePdf = (items: ImageItem[]): Effect.Effect<void, PdfError> =
       { concurrency: 1, discard: true },
     )
 
-    doc.save("result.pdf")
+    return doc
   })
+
+export const buildPdf = (items: ImageItem[]): Effect.Effect<Uint8Array, PdfError> =>
+  buildDoc(items).pipe(Effect.map((doc) => new Uint8Array(doc.output("arraybuffer"))))
+
+export const downloadPdf = (items: ImageItem[]): Effect.Effect<void, PdfError> =>
+  buildDoc(items).pipe(Effect.map((doc) => doc.save("result.pdf")))

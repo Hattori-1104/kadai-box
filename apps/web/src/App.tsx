@@ -13,7 +13,7 @@ import type React from "react"
 import { ImageCard } from "./components/ImageCard"
 import { ImageModal } from "./components/ImageModal"
 import { type ImageItem, type ImageLoadError, loadImageItems, revokeObjectUrl } from "./lib/image"
-import { type PdfError, generatePdf } from "./lib/pdf"
+import { type PdfError, buildPdf, downloadPdf } from "./lib/pdf"
 
 const formatImageError = (e: ImageLoadError): string =>
   `"${e.fileName}" の読み込みに失敗しました`
@@ -40,6 +40,7 @@ export default function App() {
   const [items, setItems] = useState<ImageItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [previewId, setPreviewId] = useState<string | null>(null)
+  const [savedPdf, setSavedPdf] = useState<Uint8Array | null>(null)
   const itemsRef = useRef(items)
   const inputRef = useRef<HTMLInputElement>(null)
   itemsRef.current = items
@@ -63,6 +64,7 @@ export default function App() {
     const exit = await Effect.runPromiseExit(loadImageItems(files))
     if (Exit.isSuccess(exit)) {
       setItems(exit.value)
+      setSavedPdf(null)
     } else {
       setError(extractCauseMessage(exit.cause, formatImageError))
     }
@@ -71,6 +73,7 @@ export default function App() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
+    setSavedPdf(null)
     setItems((prev) => {
       const from = prev.findIndex((i) => i.id === active.id)
       const to = prev.findIndex((i) => i.id === over.id)
@@ -79,6 +82,7 @@ export default function App() {
   }
 
   const handleRotate = (id: string, dir: 1 | -1) => {
+    setSavedPdf(null)
     setItems((prev) =>
       prev.map((item) =>
         item.id === id
@@ -91,9 +95,19 @@ export default function App() {
     )
   }
 
+  const handleSave = async () => {
+    setError(null)
+    const exit = await Effect.runPromiseExit(buildPdf(items))
+    if (Exit.isSuccess(exit)) {
+      setSavedPdf(exit.value)
+    } else {
+      setError(extractCauseMessage(exit.cause, formatPdfError))
+    }
+  }
+
   const handleDownload = async () => {
     setError(null)
-    const exit = await Effect.runPromiseExit(generatePdf(items))
+    const exit = await Effect.runPromiseExit(downloadPdf(items))
     if (Exit.isFailure(exit)) {
       setError(extractCauseMessage(exit.cause, formatPdfError))
     }
@@ -147,14 +161,30 @@ export default function App() {
         return item ? <ImageModal item={item} onClose={() => setPreviewId(null)} /> : null
       })()}
 
-      <button
-        type="button"
-        onClick={handleDownload}
-        disabled={items.length === 0}
-        style={items.length === 0 ? { ...downloadBtnStyle, ...downloadBtnDisabledStyle } : downloadBtnStyle}
-      >
-        PDF をダウンロード
-      </button>
+      <div style={actionRowStyle}>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={items.length === 0}
+          style={items.length === 0 ? { ...saveBtnStyle, ...btnDisabledStyle } : saveBtnStyle}
+        >
+          PDF として保存
+        </button>
+        <button
+          type="button"
+          onClick={handleDownload}
+          disabled={items.length === 0}
+          style={items.length === 0 ? { ...downloadBtnStyle, ...btnDisabledStyle } : downloadBtnStyle}
+        >
+          ダウンロード
+        </button>
+      </div>
+
+      {savedPdf && (
+        <p style={savedStatusStyle}>
+          PDF を保存しました（{(savedPdf.byteLength / 1024).toFixed(0)} KB）
+        </p>
+      )}
     </div>
   )
 }
@@ -192,20 +222,45 @@ const gridStyle: React.CSSProperties = {
   marginBottom: 32,
 }
 
-const downloadBtnStyle: React.CSSProperties = {
-  padding: "12px 32px",
-  background: "#111",
-  color: "#fff",
-  border: "none",
+const actionRowStyle: React.CSSProperties = {
+  display: "flex",
+  gap: 12,
+  flexWrap: "wrap",
+}
+
+const saveBtnStyle: React.CSSProperties = {
+  padding: "12px 28px",
+  background: "#fff",
+  color: "#111",
+  border: "2px solid #111",
   borderRadius: 8,
   fontSize: 15,
   fontWeight: 600,
   cursor: "pointer",
 }
 
-const downloadBtnDisabledStyle: React.CSSProperties = {
-  background: "#ccc",
+const downloadBtnStyle: React.CSSProperties = {
+  padding: "12px 28px",
+  background: "#111",
+  color: "#fff",
+  border: "2px solid #111",
+  borderRadius: 8,
+  fontSize: 15,
+  fontWeight: 600,
+  cursor: "pointer",
+}
+
+const btnDisabledStyle: React.CSSProperties = {
+  background: "#eee",
+  color: "#aaa",
+  borderColor: "#ddd",
   cursor: "not-allowed",
+}
+
+const savedStatusStyle: React.CSSProperties = {
+  marginTop: 12,
+  fontSize: 13,
+  color: "#166534",
 }
 
 const errorStyle: React.CSSProperties = {
