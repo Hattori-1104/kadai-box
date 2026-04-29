@@ -126,8 +126,8 @@ export default function App() {
         >
           <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
             <div style={gridStyle}>
-              {items.map((item) => (
-                <ImageCard key={item.id} item={item} onRotate={handleRotate} />
+              {items.map((item, i) => (
+                <ImageCard key={item.id} item={item} index={i} onRotate={handleRotate} />
               ))}
             </div>
           </SortableContext>

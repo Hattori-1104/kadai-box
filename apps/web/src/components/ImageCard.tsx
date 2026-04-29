@@ -5,12 +5,13 @@ import type { ImageItem } from "../lib/image"
 
 type Props = {
   item: ImageItem
+  index: number
   onRotate: (id: string, dir: 1 | -1) => void
 }
 
 const CARD_WIDTH = 160
 
-export function ImageCard({ item, onRotate }: Props) {
+export function ImageCard({ item, index, onRotate }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id })
 
@@ -100,7 +101,7 @@ export function ImageCard({ item, onRotate }: Props) {
             textAlign: "center",
           }}
         >
-          {item.file.name}
+          {index + 1}
         </span>
         <button type="button" onClick={() => onRotate(item.id, 1)} style={rotateBtnStyle} title="右に回転">
           ↻
