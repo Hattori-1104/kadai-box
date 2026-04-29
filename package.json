@@ -12,5 +12,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4"
+  },
+  "dependencies": {
+    "effect": "^3.21.2"
   }
 }
