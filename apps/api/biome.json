@@ -6,7 +6,7 @@
 		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false
+		"includes": ["**", "!!**/dist"]
 	},
 	"formatter": {
 		"enabled": true,
@@ -20,8 +20,7 @@
 	},
 	"javascript": {
 		"formatter": {
-			"quoteStyle": "double",
-			"semicolons": "asNeeded"
+			"quoteStyle": "double"
 		}
 	},
 	"assist": {
