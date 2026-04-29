@@ -6,17 +6,20 @@ import {
   Cause,
   Exit,
   Option,
+  SessionError,
   StateError,
   buildAuthUrl,
   createSession,
   deleteSession,
   exchangeCode,
   generateState,
+  getAccessToken,
   getSessionUserId,
   saveState,
   upsertUser,
   verifyAndDeleteState,
 } from "./lib/box-auth"
+import { BoxUploadError, getOrCreateKadaiBoxFolder, uploadPdfToBox } from "./lib/box-upload"
 
 const SESSION_COOKIE = "sid"
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
@@ -96,6 +99,59 @@ export const api = new Hono<{ Bindings: Env }>()
     }
 
     return c.json({ user: exit.value })
+  })
+
+  // POST /api/box/upload — upload PDF to "課題ボックス" folder in Box root
+  .post("/box/upload", async (c) => {
+    const sessionId = getCookie(c, SESSION_COOKIE)
+    if (!sessionId) return c.json({ error: "Not authenticated" }, 401)
+
+    const exit = await Effect.runPromiseExit(
+      getSessionUserId(sessionId, c.env).pipe(
+        Effect.flatMap((userId) => getAccessToken(userId, c.env)),
+        Effect.flatMap((accessToken) =>
+          Effect.tryPromise({
+            try: () => c.req.formData(),
+            catch: (e) => new BoxUploadError({ message: String(e) }),
+          }).pipe(
+            Effect.flatMap((form) => {
+              const file = form.get("file")
+              const filename =
+                (form.get("filename") as string | null) ?? "kadai.pdf"
+
+              if (!(file instanceof File)) {
+                return Effect.fail(new BoxUploadError({ message: "Missing file" }))
+              }
+
+              return Effect.tryPromise({
+                try: () =>
+                  file.arrayBuffer().then((buf) => new Uint8Array(buf)),
+                catch: (e) => new BoxUploadError({ message: String(e) }),
+              }).pipe(
+                Effect.flatMap((bytes) =>
+                  getOrCreateKadaiBoxFolder(accessToken).pipe(
+                    Effect.flatMap((folderId) =>
+                      uploadPdfToBox(folderId, filename, bytes, accessToken),
+                    ),
+                  ),
+                ),
+              )
+            }),
+          ),
+        ),
+      ),
+    )
+
+    if (Exit.isFailure(exit)) {
+      const err = Cause.failureOption(exit.cause)
+      if (Option.isSome(err) && err.value instanceof SessionError) {
+        return c.json({ error: "Not authenticated" }, 401)
+      }
+      console.error(Cause.squash(exit.cause))
+      return c.json({ error: "Upload failed" }, 500)
+    }
+
+    return c.json({ file: exit.value })
   })
 
   // POST /api/auth/logout — delete session
