@@ -11,6 +11,7 @@ import { Cause, Effect, Exit, Option } from "effect"
 import { type ChangeEvent, useEffect, useRef, useState } from "react"
 import type React from "react"
 import { ImageCard } from "./components/ImageCard"
+import { ImageModal } from "./components/ImageModal"
 import { type ImageItem, type ImageLoadError, loadImageItems, revokeObjectUrl } from "./lib/image"
 import { type PdfError, generatePdf } from "./lib/pdf"
 
@@ -38,6 +39,7 @@ const extractCauseMessage = <E,>(
 export default function App() {
   const [items, setItems] = useState<ImageItem[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [previewId, setPreviewId] = useState<string | null>(null)
   const itemsRef = useRef(items)
   const inputRef = useRef<HTMLInputElement>(null)
   itemsRef.current = items
@@ -127,12 +129,23 @@ export default function App() {
           <SortableContext items={items.map((i) => i.id)} strategy={rectSortingStrategy}>
             <div style={gridStyle}>
               {items.map((item, i) => (
-                <ImageCard key={item.id} item={item} index={i} onRotate={handleRotate} />
+                <ImageCard
+                  key={item.id}
+                  item={item}
+                  index={i}
+                  onRotate={handleRotate}
+                  onPreview={setPreviewId}
+                />
               ))}
             </div>
           </SortableContext>
         </DndContext>
       )}
+
+      {previewId && (() => {
+        const item = items.find((i) => i.id === previewId)
+        return item ? <ImageModal item={item} onClose={() => setPreviewId(null)} /> : null
+      })()}
 
       <button
         type="button"

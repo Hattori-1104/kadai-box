@@ -7,11 +7,12 @@ type Props = {
   item: ImageItem
   index: number
   onRotate: (id: string, dir: 1 | -1) => void
+  onPreview: (id: string) => void
 }
 
 const CARD_WIDTH = 160
 
-export function ImageCard({ item, index, onRotate }: Props) {
+export function ImageCard({ item, index, onRotate, onPreview }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: item.id })
 
@@ -53,7 +54,9 @@ export function ImageCard({ item, index, onRotate }: Props) {
         ⠿
       </div>
 
-      <div
+      <button
+        type="button"
+        onClick={() => !isDragging && onPreview(item.id)}
         style={{
           width: CARD_WIDTH,
           height: CARD_WIDTH,
@@ -62,6 +65,9 @@ export function ImageCard({ item, index, onRotate }: Props) {
           justifyContent: "center",
           background: "#f0f0f0",
           overflow: "hidden",
+          cursor: "zoom-in",
+          border: "none",
+          padding: 0,
         }}
       >
         <img
@@ -76,7 +82,7 @@ export function ImageCard({ item, index, onRotate }: Props) {
             transformBox: "fill-box",
           }}
         />
-      </div>
+      </button>
 
       <div
         style={{
