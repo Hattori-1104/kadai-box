@@ -6,12 +6,15 @@ const A4_WIDTH_MM = 210
 const A4_HEIGHT_MM = 297
 const PADDING_MM = 10
 
-export class PdfError extends Data.TaggedError("PdfError")<{ cause?: unknown }> {}
+export class PdfError extends Data.TaggedError("PdfError")<{
+  cause?: unknown
+  fileName?: string
+}> {}
 
 const decodeImage = (file: File): Effect.Effect<ImageBitmap, PdfError> =>
   Effect.tryPromise({
     try: () => createImageBitmap(file),
-    catch: (e) => new PdfError({ cause: e }),
+    catch: (e) => new PdfError({ cause: e, fileName: file.name }),
   })
 
 const drawRotated = (

@@ -10,25 +10,28 @@ export type ImageItem = {
 }
 
 export class ImageLoadError extends Data.TaggedError("ImageLoadError")<{
+  fileName: string
   cause?: unknown
 }> {}
 
 const getImageDimensions = (
   url: string,
-): Effect.Effect<{ width: number; height: number }, ImageLoadError> =>
+): Effect.Effect<{ width: number; height: number }, unknown> =>
   Effect.async((resume) => {
     const img = new Image()
     img.onload = () => resume(Effect.succeed({ width: img.width, height: img.height }))
-    img.onerror = (e) => resume(Effect.fail(new ImageLoadError({ cause: e })))
+    img.onerror = (e) => resume(Effect.fail(e))
     img.src = url
   })
 
 export const loadImageItem = (file: File): Effect.Effect<ImageItem, ImageLoadError> =>
   Effect.gen(function* () {
     const objectUrl = URL.createObjectURL(file)
-    const { width, height } = yield* getImageDimensions(objectUrl)
+    const { width, height } = yield* getImageDimensions(objectUrl).pipe(
+      Effect.mapError((cause) => new ImageLoadError({ fileName: file.name, cause })),
+    )
     return {
-      id: crypto.randomUUID(),
+      id: crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36),
       file,
       objectUrl,
       width,
@@ -38,9 +41,9 @@ export const loadImageItem = (file: File): Effect.Effect<ImageItem, ImageLoadErr
   })
 
 export const loadImageItems = (
-  files: FileList,
+  files: File[],
 ): Effect.Effect<ImageItem[], ImageLoadError> =>
-  Effect.all(Array.from(files).map(loadImageItem), { concurrency: "unbounded" })
+  Effect.all(files.map(loadImageItem), { concurrency: "unbounded" })
 
 export const revokeObjectUrl = (item: ImageItem): void => {
   URL.revokeObjectURL(item.objectUrl)
